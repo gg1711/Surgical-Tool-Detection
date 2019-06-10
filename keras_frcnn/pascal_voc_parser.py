@@ -2,7 +2,7 @@ import os
 import cv2
 import xml.etree.ElementTree as ET
 import numpy as np
-from tqdm import tqdm
+from tqdm import tqdm_notebook as tqdm
 def get_data(input_path):
     all_imgs = []
 
