@@ -3,7 +3,7 @@
 # Reference
 - [Very Deep Convolutional Networks for Large-Scale Image Recognition](https://arxiv.org/abs/1409.1556)
 """
-from __future__ import print_function
+from __future__ import print_function #to utilise code for future updates
 from __future__ import absolute_import
 from __future__ import division
 
@@ -20,7 +20,7 @@ from keras_frcnn.RoiPoolingConv import RoiPoolingConv
 
 
 def get_weight_path():
-    if K.image_dim_ordering() == 'th':
+    if K.image_dim_ordering() == 'th': #just for checking theano backend
         print('pretrained weights not available for VGG with theano backend')
         return
     else:
