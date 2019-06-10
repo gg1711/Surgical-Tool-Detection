@@ -2,6 +2,7 @@ import os
 import cv2
 import xml.etree.ElementTree as ET
 import numpy as np
+from tqdm import tqdm
 def get_data(input_path):
     all_imgs = []
 
@@ -39,7 +40,7 @@ def get_data(input_path):
 
     annots = [os.path.join(annot_path, s) for s in os.listdir(annot_path)]
     idx = 0
-    for annot in annots:
+    for annot in tqdm(annots):
         try:
             idx += 1
 
