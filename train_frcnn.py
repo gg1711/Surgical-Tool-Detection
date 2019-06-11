@@ -145,7 +145,7 @@ except:
 	print('Could not load pretrained model weights. Weights can be found in the keras application folder \
 		https://github.com/fchollet/keras/tree/master/keras/applications')
 
-sgd=SGD(lr=1e-3)
+sgd=SGD(lr=1e-3,momentum=0.9,decay=0.0)
 
 def lr_schedule(epoch,lrate):
     if (epoch%10000 ==0 and epoch!=0):
