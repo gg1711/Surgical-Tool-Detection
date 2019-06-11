@@ -10,7 +10,7 @@ def get_data(input_path):
 
     class_mapping = {}
 
-    visualise = True
+    visualise = False
 
     data_path = os.path.join(input_path,'dataset')
 
