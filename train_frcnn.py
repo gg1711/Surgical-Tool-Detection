@@ -138,7 +138,7 @@ rpn = nn.rpn(shared_layers, num_anchors)
 classifier = nn.classifier(shared_layers, roi_input, C.num_rois, nb_classes=len(classes_count), trainable=True)
 #returns a list [out_class, out_regr] both are cls and reg models for detector (FAST RCNN)
 
-model_rpn = Model(img_input, rpn[:2]) #rpn_reg and rpn_cls are given as inputs
+model_rpn = Model(img_input, rpn[:2]) #rpn_reg and rpn_cls are used as models
 model_classifier = Model([img_input, roi_input], classifier)
 
 # this is a model that holds both the RPN and the classifier, used to load/save weights for the models
