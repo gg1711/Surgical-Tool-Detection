@@ -201,7 +201,7 @@ for epoch_num in range(num_epochs):
 				if mean_overlapping_bboxes == 0:
 					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
-			X, Y, img_data = next(data_gen_train)
+			X, Y, img_data = next(data_gen_train)  # will not return anything once data_gen_train becomes empty Check generators and Next command
 
 			loss_rpn = model_rpn.train_on_batch(X, Y) # model returns losses list
 #see test_on_batch
