@@ -112,6 +112,10 @@ print('Num val samples {}'.format(len(val_imgs)))
 
 
 data_gen_train = data_generators.get_anchor_gt(train_imgs, classes_count, C, nn.get_img_output_length, K.image_dim_ordering(), mode='train')
+
+#yielding means returning value one by one
+#Here we gets np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug    as return statements
+
 data_gen_val = data_generators.get_anchor_gt(val_imgs, classes_count, C, nn.get_img_output_length,K.image_dim_ordering(), mode='val')
 
 if K.image_dim_ordering() == 'th':
