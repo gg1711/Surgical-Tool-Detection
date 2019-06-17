@@ -33,10 +33,8 @@ parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degr
 				  action="store_true", default=False)
 parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=40)
 parser.add_option("--config_filename", dest="config_filename", help=
-				"Location to store all the metadata related to the training (to be used when testing).",
+				"Location to read the metadata related to the training (generated when training).",
 				default="config.pickle")
-parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default='./model_frcnn.hdf5')
-parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights. If not specified, will try to load default weights provided by keras.")
 
 (options, args) = parser.parse_args()
 
@@ -50,14 +48,16 @@ elif options.parser == 'simple':
 else:
 	raise ValueError("Command line option parser must be one of 'pascal_voc' or 'simple'")
 
-# pass the settings from the command line, and persist them in the config object
-C = config.Config()
+# loading the settings from pickle file
+config_output_filename = options.config_filename
+
+with open(config_output_filename, 'rb') as f_in:
+	C = pickle.load(f_in)
 
 C.use_horizontal_flips = bool(options.horizontal_flips)
 C.use_vertical_flips = bool(options.vertical_flips)
 C.rot_90 = bool(options.rot_90)
 
-C.model_path = options.output_weight_path
 C.num_rois = int(options.num_rois)
 
 if options.network == 'vgg':
@@ -70,14 +70,7 @@ else:
 	print('Not a valid model')
 	raise ValueError
 
-
-# check if weight path was passed via command line
-if options.input_weight_path:
-	C.base_net_weights = options.input_weight_path
-else:
-	# set the path to weights based on backend and model
-	C.base_net_weights = nn.get_weight_path()
-
+	
 all_imgs, classes_count, class_mapping = get_data(options.train_path)
 '''
 Also giving option to load from drive
@@ -100,10 +93,6 @@ print('Num classes (including bg) = {}'.format(len(classes_count)))
 
 config_output_filename = options.config_filename
 
-with open(config_output_filename, 'wb') as config_f:
-	pickle.dump(C,config_f)
-	print('Config has been written to {}, and can be loaded when testing to ensure correct results'.format(config_output_filename))
-
 random.shuffle(all_imgs)
 
 num_imgs = len(all_imgs)
@@ -114,8 +103,6 @@ val_imgs = [s for s in all_imgs if s['imageset'] == 'test']
 print('Num train samples {}'.format(len(train_imgs)))
 print('Num val samples {}'.format(len(val_imgs)))
 
-
-data_gen_train = data_generators.get_anchor_gt(train_imgs, classes_count, C, nn.get_img_output_length, K.image_dim_ordering(), mode='train')
 data_gen_val = data_generators.get_anchor_gt(val_imgs, classes_count, C, nn.get_img_output_length,K.image_dim_ordering(), mode='val')
 
 if K.image_dim_ordering() == 'th':
@@ -142,12 +129,11 @@ model_classifier = Model([img_input, roi_input], classifier)
 model_all = Model([img_input, roi_input], rpn[:2] + classifier)
 
 try:
-	print('loading weights from {}'.format(C.base_net_weights))
+	print('loading weights from {}'.format(C.model_path))
 	model_rpn.load_weights(C.model_path, by_name=True)
 	model_classifier.load_weights(C.model_path, by_name=True)
 except:
-	print('Could not load pretrained model weights. Weights can be found in the keras application folder \
-		https://github.com/fchollet/keras/tree/master/keras/applications')
+	print('Could not load pretrained model weights.')
 
 sgd=SGD(lr=1e-3,momentum=0.9,decay=0.0)
 '''
