@@ -7,6 +7,7 @@ import numpy as np
 from optparse import OptionParser
 import pickle
 
+from keras.callbacks import ReduceLROnPlateau
 from keras import backend as K
 from keras.optimizers import Adam, SGD, RMSprop
 from keras.layers import Input
@@ -18,18 +19,19 @@ from keras.utils import generic_utils
 
 sys.setrecursionlimit(40000)
 
+K.set_learning_phase(1) #set learning phase
 parser = OptionParser()
 
 parser.add_option("-p", "--path", dest="train_path", help="Path to training data.")
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="pascal_voc")
-parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=32)
-parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='resnet50')
-parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=False)
+parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=50)
+parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='vgg')
+parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=False)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
 				  action="store_true", default=False)
-parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=2000)
+parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=40)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config.pickle")
@@ -76,11 +78,13 @@ else:
 	# set the path to weights based on backend and model
 	C.base_net_weights = nn.get_weight_path()
 
-#all_imgs, classes_count, class_mapping = get_data(options.train_path)
-#Also giving option to load from drive
-all_imgs=np.load('all_imgs.npy')
-classes_count=np.load('classes_count.npy')
-class_mapping=np.load('classes_mapping.npy')
+all_imgs, classes_count, class_mapping = get_data(options.train_path)
+'''
+Also giving option to load from drive
+all_imgs=np.load('all_imgs.npy',allow_pickle=True)
+classes_count=np.load('classes_count.npy',allow_pickle=True)
+class_mapping=np.load('classes_mapping.npy',allow_pickle=True)
+'''
 
 if 'bg' not in classes_count:
 	classes_count['bg'] = 0
@@ -112,10 +116,6 @@ print('Num val samples {}'.format(len(val_imgs)))
 
 
 data_gen_train = data_generators.get_anchor_gt(train_imgs, classes_count, C, nn.get_img_output_length, K.image_dim_ordering(), mode='train')
-
-#yielding means returning value one by one
-#Here we gets np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug    as return statements
-
 data_gen_val = data_generators.get_anchor_gt(val_imgs, classes_count, C, nn.get_img_output_length,K.image_dim_ordering(), mode='val')
 
 if K.image_dim_ordering() == 'th':
@@ -128,17 +128,14 @@ roi_input = Input(shape=(None, 4))
 
 # define the base network (resnet here, can be VGG, Inception, etc)
 shared_layers = nn.nn_base(img_input, trainable=True)
-#gives vgg model layers as output
 
 # define the RPN, built on the base layers
 num_anchors = len(C.anchor_box_scales) * len(C.anchor_box_ratios)
 rpn = nn.rpn(shared_layers, num_anchors)
-#gives a list [rpn_reg,rpn_cls,vgg_model] where rpn_reg, rn_cls sre just few layers added on VGG model
 
 classifier = nn.classifier(shared_layers, roi_input, C.num_rois, nb_classes=len(classes_count), trainable=True)
-#returns a list [out_class, out_regr] both are cls and reg models for detector (FAST RCNN)
 
-model_rpn = Model(img_input, rpn[:2]) #rpn_reg and rpn_cls are used as models
+model_rpn = Model(img_input, rpn[:2])
 model_classifier = Model([img_input, roi_input], classifier)
 
 # this is a model that holds both the RPN and the classifier, used to load/save weights for the models
@@ -146,29 +143,28 @@ model_all = Model([img_input, roi_input], rpn[:2] + classifier)
 
 try:
 	print('loading weights from {}'.format(C.base_net_weights))
-	model_rpn.load_weights(C.base_net_weights, by_name=True) 
-	#By keeping by name=True it only loads weights upto common layers in both models
-	model_classifier.load_weights(C.base_net_weights, by_name=True)
+	model_rpn.load_weights(C.model_path, by_name=True)
+	model_classifier.load_weights(C.model_path, by_name=True)
 except:
 	print('Could not load pretrained model weights. Weights can be found in the keras application folder \
 		https://github.com/fchollet/keras/tree/master/keras/applications')
 
 sgd=SGD(lr=1e-3,momentum=0.9,decay=0.0)
-
+'''
 def lr_schedule(epoch,lrate):
-    if (epoch%10000 ==0 and epoch!=0):
-        lrate = lrate/10;      
-    return lrate
+	if (epoch%10 ==0 and epoch!=0):
+		lrate = lrate//10;      
+	return lrate
 
-	
+reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0)
+    
+''' 
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', min_lr=0)
 optimizer = Adam(lr=1e-5)
 optimizer_classifier = Adam(lr=1e-5)
-#Compile defines the loss function, the optimizer and the metrics and has nothing to do with training model or initialising weights
 model_rpn.compile(optimizer=optimizer, loss=[losses.rpn_loss_cls(num_anchors), losses.rpn_loss_regr(num_anchors)])
 model_classifier.compile(optimizer=optimizer_classifier, loss=[losses.class_loss_cls, losses.class_loss_regr(len(classes_count)-1)], metrics={'dense_class_{}'.format(len(classes_count)): 'accuracy'})
-model_all.compile(optimizer=sgd, loss='mae',callbacks = [
-    keras.callbacks.LearningRateScheduler(lr_schedule, verbose=0)
-])
+model_all.compile(optimizer='sgd', loss='mae',callbacks = [reduce_lr])
 
 epoch_length = 1000
 num_epochs = int(options.num_epochs)
@@ -201,13 +197,13 @@ for epoch_num in range(num_epochs):
 				if mean_overlapping_bboxes == 0:
 					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
-			X, Y, img_data = next(data_gen_val)  # will not return anything once data_gen_train becomes empty Check generators and Next command
+			X, Y, img_data = next(data_gen_train)
 
-			loss_rpn = model_rpn.test_on_batch(X, Y) # model returns losses list
-#see test_on_batch
+			loss_rpn = model_rpn.train_on_batch(X, Y)
+
 			P_rpn = model_rpn.predict_on_batch(X)
 
-			R = roi_helpers.rpn_to_roi(P_rpn[0], P_rpn[1], C, K.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
+			R = roi_helpers.rpn_to_roi(P_rpn[0], P_rpn[1], C, K.image_dim_ordering(), use_regr=True, overlap_thresh=0.35, max_boxes=300)
 			# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
 			X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
 
@@ -302,3 +298,4 @@ for epoch_num in range(num_epochs):
 			continue
 
 print('Training complete, exiting.')
+print("BYE")
