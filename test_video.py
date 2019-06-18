@@ -151,17 +151,17 @@ bbox_threshold = 0.8
 
 visualise = True
 
-print(os.listdir(img_path))
 
-for idx, img_name in enumerate(sorted(os.listdir(img_path))):
-	if not img_name.lower().endswith(('.bmp', '.jpeg', '.jpg', '.png', '.tif', '.tiff')):
+st = time.time()
+v=cv2.VideoCapture(filename)
+count=0
+ret=True
+while(ret):
+	ret,frame=v.read()
+	count+=1
+	img = frame
+	if(count%25):
 		continue
-	print(img_name)
-	st = time.time()
-	filepath = os.path.join(img_path,img_name)
-
-	img = cv2.imread(filepath)
-
 	X, ratio = format_img(img, C)
 
 	if K.image_dim_ordering() == 'tf':
