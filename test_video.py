@@ -163,6 +163,7 @@ while(ret):
 	img = frame
 	if(count%25):
 		continue
+		
 	X, ratio = format_img(img, C)
 
 	if K.image_dim_ordering() == 'tf':
@@ -251,5 +252,6 @@ while(ret):
 	#cv2.waitKey(0)
 #	path=os.path.join(img_path,'result')
 #	cv2.imwrite(os.path.join(path ,'{}.png'.format(idx)),img)
-
+np.save('store.npy',store)
+#read_dictionary = np.load('my_file.npy').item()
 print('BYE')
