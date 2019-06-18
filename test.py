@@ -19,7 +19,7 @@ from keras.utils import generic_utils
 
 sys.setrecursionlimit(40000)
 
-K.set_learning_phase(1) #set learning phase
+K.set_learning_phase(0) #set learning phase -- 0 for test ; 1 for Train
 parser = OptionParser()
 
 parser.add_option("-p", "--path", dest="train_path", help="Path to training data.")
