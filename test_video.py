@@ -1,5 +1,6 @@
 from __future__ import division
 import os
+import json
 import cv2
 import numpy as np
 import sys
@@ -252,6 +253,8 @@ while(ret):
 	#cv2.waitKey(0)
 #	path=os.path.join(img_path,'result')
 #	cv2.imwrite(os.path.join(path ,'{}.png'.format(idx)),img)
-np.save('store.npy',store)
+np.save('data.npy',store)
 #read_dictionary = np.load('my_file.npy').item()
+json.dump(store, open("data.txt",'w'))
+#read_json d2 = json.load(open("text.txt"))
 print('BYE')
