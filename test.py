@@ -147,6 +147,8 @@ print('Starting testing')
 
 vis = True
 
+progbar = generic_utils.Progbar(epoch_length)
+print('Images done 0 / {}'.format(epoch_length))
 
 while True:
 	try:
