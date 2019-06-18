@@ -151,6 +151,7 @@ bbox_threshold = 0.8
 
 visualise = True
 
+store={}
 
 st = time.time()
 v=cv2.VideoCapture(filename)
@@ -220,8 +221,9 @@ while(ret):
 			bboxes[cls_name].append([C.rpn_stride*x, C.rpn_stride*y, C.rpn_stride*(x+w), C.rpn_stride*(y+h)])
 			probs[cls_name].append(np.max(P_cls[0, ii, :]))
 
-	all_dets = []
-
+	all_dets = list(bboxes.keys())
+	store[count]=list(bboxes.keys())
+'''	
 	for key in bboxes:
 		bbox = np.array(bboxes[key])
 
@@ -242,11 +244,12 @@ while(ret):
 			cv2.rectangle(img, (textOrg[0] - 5, textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (0, 0, 0), 2)
 			cv2.rectangle(img, (textOrg[0] - 5,textOrg[1]+baseLine - 5), (textOrg[0]+retval[0] + 5, textOrg[1]-retval[1] - 5), (255, 255, 255), -1)
 			cv2.putText(img, textLabel, textOrg, cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0), 1)
+'''
 	print('Elapsed time = {}'.format(time.time() - st))
 	print(all_dets)
 	#cv2.imshow('img', img)
 	#cv2.waitKey(0)
-	path=os.path.join(img_path,'result')
-	cv2.imwrite(os.path.join(path ,'{}.png'.format(idx)),img)
+#	path=os.path.join(img_path,'result')
+#	cv2.imwrite(os.path.join(path ,'{}.png'.format(idx)),img)
 
 print('BYE')
