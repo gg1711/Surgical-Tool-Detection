@@ -12,7 +12,7 @@ def augment(img_data, config, augment=True):
 	img_data_aug = copy.deepcopy(img_data)  #deepcopy changes won't be changed in original file
 
 	img = cv2.imread(img_data_aug['filepath'])
-
+#Randomly picks one out of 3 augmentations, if all are made true.
 	if augment:
 		rows, cols = img.shape[:2]
 
