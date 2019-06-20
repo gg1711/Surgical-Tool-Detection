@@ -7,8 +7,10 @@ if K.image_dim_ordering() == 'tf':
 lambda_rpn_regr = 1.0
 lambda_rpn_class = 1.0
 
-lambda_cls_regr = 1.0
+lambda_cls_regr = 1.0 #set it according to priority need to give for both reg and classification
 lambda_cls_class = 1.0
+
+# IN our example Ncls=batch_size and Nreg=?
 
 epsilon = 1e-4
 
