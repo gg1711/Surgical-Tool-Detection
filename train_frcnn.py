@@ -77,6 +77,7 @@ else:
 	C.base_net_weights = nn.get_weight_path()
 
 #all_imgs, classes_count, class_mapping = get_data(options.train_path)
+#all_imgs contains {'image_set': trainval/test, 'bbox':x1,y1,x2,y2}
 #Also giving option to load from drive
 all_imgs=np.load('all_imgs.npy')
 classes_count=np.load('classes_count.npy')
