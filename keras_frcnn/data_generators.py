@@ -302,7 +302,7 @@ def get_anchor_gt(all_img_data, class_count, C, img_length_calc_function, backen
 
 				# get image dimensions for resizing
 				(resized_width, resized_height) = get_new_img_size(width, height, C.im_size)
-
+#No need to use it, Train it on same image size i.e 596*334
 				# resize the image so that smalles side is length = 600px
 				x_img = cv2.resize(x_img, (resized_width, resized_height), interpolation=cv2.INTER_CUBIC)
 
