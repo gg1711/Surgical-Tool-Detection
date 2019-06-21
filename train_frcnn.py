@@ -212,7 +212,11 @@ for epoch_num in range(num_epochs):
 			#rpn_to_roi returns only the bounding boxes that were picked using the integer data type
 			# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
 			X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
-
+			
+			#X2 = np.array(x_roi)   IouS is not even returned, Its just for Debugging
+			#Y1 = np.array(y_class_num)
+			#Y2 = np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1)
+			
 			if X2 is None:
 				rpn_accuracy_rpn_monitor.append(0)
 				rpn_accuracy_for_epoch.append(0)
