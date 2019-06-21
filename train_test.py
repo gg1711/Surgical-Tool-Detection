@@ -28,10 +28,10 @@ parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of s
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=100)
 parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='vgg')
 parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
-parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=False)
+parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
 				  action="store_true", default=False)
-parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=60)
+parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=30)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config.pickle")
@@ -176,10 +176,14 @@ epoch_length_test = len(val_imgs)
 num_epochs = int(options.num_epochs)
 iter_num = 0
 
-losses = np.zeros((epoch_length_train, 5))
-rpn_accuracy_rpn_monitor = []
-rpn_accuracy_for_epoch = []
+losses_train = np.zeros((epoch_length_train, 5))
+rpn_accuracy_rpn_monitor_train = []
+rpn_accuracy_for_epoch_train = []
 start_time = time.time()
+
+losses_test = np.zeros((epoch_length_test, 5))
+rpn_accuracy_rpn_monitor_test = []
+rpn_accuracy_for_epoch_test = []
 
 best_loss = np.Inf
 
@@ -199,9 +203,9 @@ for epoch_num in range(num_epochs):
 	while True:
 		try:
 
-			if len(rpn_accuracy_rpn_monitor) == epoch_length_train and C.verbose:
-				mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
-				rpn_accuracy_rpn_monitor = []
+			if len(rpn_accuracy_rpn_monitor_train) == epoch_length_train and C.verbose:
+				mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor_train))/len(rpn_accuracy_rpn_monitor_train)
+				rpn_accuracy_rpn_monitor_train = []
 				print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length_train))
 				if mean_overlapping_bboxes == 0:
 					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
@@ -217,8 +221,8 @@ for epoch_num in range(num_epochs):
 			X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
 
 			if X2 is None:
-				rpn_accuracy_rpn_monitor.append(0)
-				rpn_accuracy_for_epoch.append(0)
+				rpn_accuracy_rpn_monitor_train.append(0)
+				rpn_accuracy_for_epoch_train.append(0)
 				continue
 
 			neg_samples = np.where(Y1[0, :, -1] == 1)
@@ -234,8 +238,8 @@ for epoch_num in range(num_epochs):
 			else:
 				pos_samples = []
 			
-			rpn_accuracy_rpn_monitor.append(len(pos_samples))
-			rpn_accuracy_for_epoch.append((len(pos_samples)))
+			rpn_accuracy_rpn_monitor_train.append(len(pos_samples))
+			rpn_accuracy_for_epoch_train.append((len(pos_samples)))
 
 			if C.num_rois > 1:
 				if len(pos_samples) < C.num_rois//2:
@@ -259,27 +263,27 @@ for epoch_num in range(num_epochs):
 
 			loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
 
-			losses[iter_num, 0] = loss_rpn[1]
-			losses[iter_num, 1] = loss_rpn[2]
+			losses_train[iter_num, 0] = loss_rpn[1]
+			losses_train[iter_num, 1] = loss_rpn[2]
 
-			losses[iter_num, 2] = loss_class[1]
-			losses[iter_num, 3] = loss_class[2]
-			losses[iter_num, 4] = loss_class[3]
+			losses_train[iter_num, 2] = loss_class[1]
+			losses_train[iter_num, 3] = loss_class[2]
+			losses_train[iter_num, 4] = loss_class[3]
 
-			progbar.update(iter_num+1, [('rpn_cls', losses[iter_num, 0]), ('rpn_regr', losses[iter_num, 1]),
-									  ('detector_cls', losses[iter_num, 2]), ('detector_regr', losses[iter_num, 3])])
+			progbar.update(iter_num+1, [('rpn_cls', losses_train[iter_num, 0]), ('rpn_regr', losses_train[iter_num, 1]),
+									  ('detector_cls', losses_train[iter_num, 2]), ('detector_regr', losses_train[iter_num, 3])])
 
 			iter_num += 1
 			
 			if iter_num == epoch_length_train:
-				loss_rpn_cls = np.mean(losses[:, 0])
-				loss_rpn_regr = np.mean(losses[:, 1])
-				loss_class_cls = np.mean(losses[:, 2])
-				loss_class_regr = np.mean(losses[:, 3])
-				class_acc = np.mean(losses[:, 4])
+				loss_rpn_cls = np.mean(losses_train[:, 0])
+				loss_rpn_regr = np.mean(losses_train[:, 1])
+				loss_class_cls = np.mean(losses_train[:, 2])
+				loss_class_regr = np.mean(losses_train[:, 3])
+				class_acc = np.mean(losses_train[:, 4])
 
-				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
-				rpn_accuracy_for_epoch = []
+				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch_train)) / len(rpn_accuracy_for_epoch_train)
+				rpn_accuracy_for_epoch_train = []
 
 				if C.verbose:
 					print('Mean number of bounding boxes from RPN overlapping ground truth boxes: {}'.format(mean_overlapping_bboxes))
@@ -299,6 +303,7 @@ for epoch_num in range(num_epochs):
 					if C.verbose:
 						print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
 					best_loss = curr_loss
+					model_all.save_weights('./model_frcnn{}.hdf5'.format(epoch_num+1))
 					model_all.save_weights(C.model_path)
 
 				break
@@ -315,9 +320,9 @@ for epoch_num in range(num_epochs):
 	while True:
 		try:
 
-			if len(rpn_accuracy_rpn_monitor) == epoch_length_test and C.verbose:
-				mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor))/len(rpn_accuracy_rpn_monitor)
-				rpn_accuracy_rpn_monitor = []
+			if len(rpn_accuracy_rpn_monitor_test) == epoch_length_test and C.verbose:
+				mean_overlapping_bboxes = float(sum(rpn_accuracy_rpn_monitor_test))/len(rpn_accuracy_rpn_monitor_test)
+				rpn_accuracy_rpn_monitor_test = []
 				print('Average number of overlapping bounding boxes from RPN = {} for {} previous iterations'.format(mean_overlapping_bboxes, epoch_length_test))
 				if mean_overlapping_bboxes == 0:
 					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
@@ -333,8 +338,8 @@ for epoch_num in range(num_epochs):
 			X2, Y1, Y2, IouS = roi_helpers.calc_iou(R, img_data, C, class_mapping)
 
 			if X2 is None:
-				rpn_accuracy_rpn_monitor.append(0)
-				rpn_accuracy_for_epoch.append(0)
+				rpn_accuracy_rpn_monitor_test.append(0)
+				rpn_accuracy_for_epoch_test.append(0)
 				continue
 
 			neg_samples = np.where(Y1[0, :, -1] == 1)
@@ -350,8 +355,8 @@ for epoch_num in range(num_epochs):
 			else:
 				pos_samples = []
 
-			rpn_accuracy_rpn_monitor.append(len(pos_samples))
-			rpn_accuracy_for_epoch.append((len(pos_samples)))
+			rpn_accuracy_rpn_monitor_test.append(len(pos_samples))
+			rpn_accuracy_for_epoch_test.append((len(pos_samples)))
 
 			if C.num_rois > 1:
 				if len(pos_samples) < C.num_rois//2:
@@ -375,27 +380,27 @@ for epoch_num in range(num_epochs):
 
 			loss_class = model_classifier.test_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
 
-			losses[iter_num, 0] = loss_rpn[1]
-			losses[iter_num, 1] = loss_rpn[2]
+			losses_test[iter_num, 0] = loss_rpn[1]
+			losses_test[iter_num, 1] = loss_rpn[2]
 
-			losses[iter_num, 2] = loss_class[1]
-			losses[iter_num, 3] = loss_class[2]
-			losses[iter_num, 4] = loss_class[3]
+			losses_test[iter_num, 2] = loss_class[1]
+			losses_test[iter_num, 3] = loss_class[2]
+			losses_test[iter_num, 4] = loss_class[3]
 
-			progbar.update(iter_num+1, [('rpn_cls', losses[iter_num, 0]), ('rpn_regr', losses[iter_num, 1]),
-									('detector_cls', losses[iter_num, 2]), ('detector_regr', losses[iter_num, 3])])
+			progbar.update(iter_num+1, [('rpn_cls', losses_test[iter_num, 0]), ('rpn_regr', losses_test[iter_num, 1]),
+									('detector_cls', losses_test[iter_num, 2]), ('detector_regr', losses_test[iter_num, 3])])
 
 			iter_num += 1
 
 			if iter_num == epoch_length_test:
-				loss_rpn_cls = np.mean(losses[:, 0])
-				loss_rpn_regr = np.mean(losses[:, 1])
-				loss_class_cls = np.mean(losses[:, 2])
-				loss_class_regr = np.mean(losses[:, 3])
-				class_acc = np.mean(losses[:, 4])
+				loss_rpn_cls = np.mean(losses_test[:, 0])
+				loss_rpn_regr = np.mean(losses_test[:, 1])
+				loss_class_cls = np.mean(losses_test[:, 2])
+				loss_class_regr = np.mean(losses_test[:, 3])
+				class_acc = np.mean(losses_test[:, 4])
 
-				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
-				rpn_accuracy_for_epoch = []
+				mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch_test)) / len(rpn_accuracy_for_epoch_test)
+				rpn_accuracy_for_epoch_test = []
 
 				if C.verbose:
 					print('Mean number of bounding boxes from RPN overlapping ground truth boxes: {}'.format(mean_overlapping_bboxes))
@@ -423,7 +428,7 @@ for epoch_num in range(num_epochs):
 
 loss_train=np.array(loss_train)
 loss_test=np.array(loss_test)
-np.save('loss_train.npy',loss_train)
-np.save('loss_test.npy',loss_test)
+np.save('train_loss.npy',loss_train)
+np.save('test_loss.npy',loss_test)
 print('Training complete, exiting.')
 print("BYE")
