@@ -206,7 +206,7 @@ for epoch_num in range(num_epochs):
 
 			loss_rpn = model_rpn.train_on_batch(X, Y) # model returns losses list
 #see test_on_batch
-			P_rpn = model_rpn.predict_on_batch(X)
+			P_rpn = model_rpn.predict_on_batch(X)  # return Y a numpy array of [Y_rpn_cls,Y_rpn_reg]
 
 			R = roi_helpers.rpn_to_roi(P_rpn[0], P_rpn[1], C, K.image_dim_ordering(), use_regr=True, overlap_thresh=0.7, max_boxes=300)
 			# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
