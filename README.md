@@ -1,59 +1,22 @@
-# keras-frcnn
+# Used keras-frcnn
 Keras implementation of Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks.
 cloned from https://github.com/yhenon/keras-frcnn/
 
-Please note that I currently am quite busy with other projects and unfortunately dont have a lot of time to spend on this maintaining this repository, but any contributions are welcome!
+India has 1.3 billion population with a  very low doctor-patient ratio, thus most people lack access to quality healthcare. According to health reports, mortality rate of India increased from 26.83 deaths per 100 population in 1970 to 31.02 deaths per 100 population in 2015 growing at an average annual rate of 1.72 %. We don't have any system of assuring quality check on surgeons surgical skills during surgery, thus patients have to suffer many times because of the lack of surgical skills of the doctor. Improving surgical training, assuring regular feedbacks and setting up some type of norms for surgery can help us to reduce the rate of complications. To do this, it is essential to assess operative skill, a process that currently requires experts and is manual, time-consuming as many surgeries lasting hours. Real-time automated surgical video analysis could provide a way to objectively and efficiently assess surgical skills. Here, we will develop an approach to detect surgical tools in surgical videos as well as assess surgeons performance using Convolutional Neural Network. We will be using the m2cai16-tool dataset with spatial bounds of tools for training our model. The m2cai16-tool dataset with spatial bounds of tools has 7 most frequently used tools in Laparoscopic surgeries. We will not only detect presence but also spatially localize surgical tools in real-world laparoscopic surgical videos. Because of using deep learning approach which not only allows for tool localization along with frame-level detection but also enables a richer analysis of tool movements which will further help in assessing surgical quality through analysis of tool usage patterns, movement range, and economy of motion.
 
-
-USAGE:
-- Both theano and tensorflow backends are supported. However compile times are very high in theano, and tensorflow is highly recommended.
-- `train_frcnn.py` can be used to train a model. To train on Pascal VOC data, simply do:
-`python train_frcnn.py -p /path/to/pascalvoc/`. 
-- the Pascal VOC data set (images and annotations for bounding boxes around the classified objects) can be obtained from: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
-- simple_parser.py provides an alternative way to input data, using a text file. Simply provide a text file, with each
-line containing:
-
-    `filepath,x1,y1,x2,y2,class_name`
-
-    For example:
-
-    /data/imgs/img_001.jpg,837,346,981,456,cow
-    
-    /data/imgs/img_002.jpg,215,312,279,391,cat
-
-    The classes will be inferred from the file. To use the simple parser instead of the default pascal voc style parser,
-    use the command line option `-o simple`. For example `python train_frcnn.py -o simple -p my_data.txt`.
-
-- Running `train_frcnn.py` will write weights to disk to an hdf5 file, as well as all the setting of the training run to a `pickle` file. These
-settings can then be loaded by `test_frcnn.py` for any testing.
-
-- test_frcnn.py can be used to perform inference, given pretrained weights and a config file. Specify a path to the folder containing
-images:
-    `python test_frcnn.py -p /path/to/test_data/`
-- Data augmentation can be applied by specifying `--hf` for horizontal flips, `--vf` for vertical flips and `--rot` for 90 degree rotations
-
-
-
-NOTES:
-- config.py contains all settings for the train or test run. The default settings match those in the original Faster-RCNN
-paper. The anchor box sizes are [128, 256, 512] and the ratios are [1:1, 1:2, 2:1].
-- The theano backend by default uses a 7x7 pooling region, instead of 14x14 as in the frcnn paper. This cuts down compiling time slightly.
-- The tensorflow backend performs a resize on the pooling region, instead of max pooling. This is much more efficient and has little impact on results.
-
+In 2016, M2CAI launched a challenge “surgical tool presence detection” which grabbed the attention of a lot of researchers in this field. There were several participants in this challenge, they tried various methods to achieve better and better precision. For the analysis of operative skills of surgeons, we require not just detection of the surgical tool but localized detection of the surgical tool so that we can analyse the movement of each tool during the surgery and can generate feedback for the doctors. This rich analysis using deep learning can as a guide after surgery and can also help in reducing the number of casualties during the surgery which only happens because of mishandling of surgical tools by doctors. In future, these type of rich analysis can help in generating real-time feedback during surgery which can further help doctors during complex surgeries. This richer analysis can also be used by robots as a training guide for automated complex surgeries. We have used one of these techniques of object detection for surgical tool detection and operational skill assessment of surgeons using deep learning.
 
 Example output:
 
-![ex1](http://i.imgur.com/7Lmb2RC.png)
-![ex2](http://i.imgur.com/h58kCIV.png)
-![ex3](http://i.imgur.com/EbvGBaG.png)
-![ex4](http://i.imgur.com/i5UAgLb.png)
+![ex1](https://imgur.com/a/f2kWMqs)
+![ex2](https://imgur.com/a/kiVpFtG)
+![ex3](https://imgur.com/a/rSWPES1)
+![ex4](https://imgur.com/a/mVACrUC)
 
 ISSUES:
 
 - If you get this error:
 `ValueError: There is a negative shape in the graph!`    
     than update keras to the newest version
-
-- This repo was developed using `python2`. `python3` should work thanks to the contribution of a number of users.
 
 - If you run out of memory, try reducing the number of ROIs that are processed simultaneously. Try passing a lower `-n` to `train_frcnn.py`. Alternatively, try reducing the image size from the default value of 600 (this setting is found in `config.py`.
