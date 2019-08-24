@@ -8,10 +8,10 @@ In 2016, M2CAI launched a challenge “surgical tool presence detection” which
 
 Example output:
 
-![ex1](https://imgur.com/a/f2kWMqs)
-![ex2](https://imgur.com/a/kiVpFtG)
-![ex3](https://imgur.com/a/rSWPES1)
-![ex4](https://imgur.com/a/mVACrUC)
+![ex1](https://i.imgur.com/DY8Yyzh.png)
+![ex2](https://i.imgur.com/kiVpFtG.png)
+![ex3](https://i.imgur.com/rSWPES1.png)
+![ex4](https://i.imgur.com/9eGnjoM.png)
 
 ISSUES:
 
